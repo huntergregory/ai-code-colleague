@@ -1,0 +1,15 @@
+# python
+.venv
+__pycache__
+
+# produced by using the CLI
+aoc/
+workspace/
+
+# local files
+scratch*
+tmp*
+
+APIKEY
+
+experiments/
