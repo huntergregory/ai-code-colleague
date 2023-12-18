@@ -10,7 +10,6 @@ def user_prompt(msg):
     return result
 
 def user_prompt_with_options(msg, prompt, options):
-    # print('💻  {} (default is "{}")'.format(msg, options[0]))
     print('💻  {}'.format(msg))
     for i, o in enumerate(options):
         if i == 0:

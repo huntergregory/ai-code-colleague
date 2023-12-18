@@ -32,7 +32,7 @@ Then:
 
 - Modify this line in *config.py*:
 ```
-OAI_API_KEY='<your-key>'
+OAI_API_KEY=None # replace with string
 ```
 
 OR
@@ -54,7 +54,7 @@ This allows automation of downloading input and submitting answers.
 3. Modify config:
 - Modify this line in *config.py*:
 ```
-AOC_SESSION_KEY='<your-key>'
+AOC_SESSION_KEY=None # replace with string
 ```
 
 OR

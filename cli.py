@@ -68,7 +68,7 @@ Options:
     if not local_model:
         os.environ['OPENAI_API_KEY'] = oai_api_key
 
-    mode = user_prompt_with_options(choice(REACTIONS) + ' Which task?', "Task", TASKS)
+    mode = user_prompt_with_options(choice(REACTIONS) + ' Which task?', 'Task', TASKS)
 
     if mode == AOC and not session_key:
         session_key = os.environ.get('AOC_SESSION_KEY')
@@ -84,17 +84,17 @@ Options:
             aoc_integration = AocIntegration(script_dir + AOC_DIRECTORY, session_key)
             aoc_integration.prompt_puzzle()
             dir = aoc_integration.puzzle_dir()
-            language = user_prompt_with_options("Let's code! Which language?", "Language", LANGUAGES)
+            language = user_prompt_with_options("Let's code! Which language?", 'Language', LANGUAGES)
             file = dir + AOC_FNAME + '.' + FILE_EXTENSIONS[language]
             tmp_file = dir + 'tmp-' + AOC_FNAME + '.' + FILE_EXTENSIONS[language]
-            is_part_one = True
-        
+            aoc_integration.is_part_one = True
+
         if mode == MULTI_FILE:
             while True:
                 file = user_prompt('Specify filepath (default is "./script.<language-extension>")')
 
                 if file == '':
-                    language = user_prompt_with_options("Let's code! Which language?", "Language", LANGUAGES)
+                    language = user_prompt_with_options("Let's code! Which language?", 'Language', LANGUAGES)
                     dir = './'
                     fname = 'script'
                     file = dir + fname + '.' + FILE_EXTENSIONS[language]
@@ -205,7 +205,7 @@ Options:
             if mode == MULTI_FILE:
                 options = ['run', 'go to new file']
             if mode == AOC:
-                if is_part_one:
+                if aoc_integration.is_part_one:
                     options = ['run', 'modify', 'start part 2', 'new puzzle/language']
                 else:
                     options = ['run', 'modify', 'new puzzle/language']
@@ -234,24 +234,24 @@ Options:
                     if mode == MULTI_FILE:
                         options = ['modify', 'go to new file']
                     if mode == AOC:
-                        if is_part_one:
+                        if aoc_integration.is_part_one:
                             options = ['modify', 'submit', 'start part 2', 'new puzzle/language']
                         else:
                             options = ['modify', 'submit', 'new puzzle/language']
                     action = user_prompt_with_options('We can iterate or move on.', 'Action', options)
 
-            if action == 'submit':
+            while action == 'submit':
                 success = aoc_integration.submit(run_result.stdout.decode())
-                if success == 1:
-                    if is_part_one:
+                if success:
+                    if aoc_integration.is_part_one:
                         action = user_prompt_with_options('Start part 2?', 'Action', ['yes', 'no, start new puzzle/language'])
                     else:
                         action == 'new puzzle/language'
                 else:
-                    options = ['modify', 'new puzzle/language']
+                    options = ['modify', 'submit', 'new puzzle/language']
                     action = user_prompt_with_options('What do you want to do?', 'Action', options)
 
-            if action == 'go to new file' or 'new puzzle/language' in action:
+            if 'new puzzle/language' in action or action == 'go to new file':
                 # technically will have a '-' line break above this
                 # not worth optimizing to remove that '-' line break
                 line_break(character='=')
@@ -276,7 +276,7 @@ Options:
             if action == 'yes' or action == 'start part 2':
                 part1_file = dir + AOC_FNAME + '-part1.' + FILE_EXTENSIONS[language]
                 shutil.copy2(src=file, dst=part1_file)
-                is_part_one = False
+                aoc_integration.is_part_one = False
                 # restart inner loop
                 instructions = user_prompt('On to part 2! What should change?')
                 continue
