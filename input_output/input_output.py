@@ -1,3 +1,6 @@
+# importing readline allows you to use arrow keys to navigate input()
+# https://stackoverflow.com/a/56275842
+import readline
 import shutil
 
 def sys_display(msg):
@@ -5,21 +8,19 @@ def sys_display(msg):
 
 def user_prompt(msg):
     print('💻  ' + msg)
-    result = input('🕵️  ')
+    result = input('> ')
     line_break()
     return result
 
-def user_prompt_with_options(msg, prompt, options):
+def user_prompt_with_options(msg, options):
     print('💻  {}'.format(msg))
     for i, o in enumerate(options):
         if i == 0:
             print('{}) {} (default)'.format(i+1, o))
         else:
             print('{}) {}'.format(i+1, o))
-    print()
     # get user choice
     while True:
-        # result = input('{}: '.format(prompt))
         result = input('> ')
 
         # default is the first option

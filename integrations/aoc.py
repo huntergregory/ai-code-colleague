@@ -4,7 +4,7 @@ import requests
 import string
 import time
 
-from log.logger import (
+from input_output.input_output import (
     line_break,
     sys_display,
     user_prompt
@@ -37,7 +37,7 @@ TIME_UNIT_TO_SECONDS = {
 
 class AocIntegration:
     def __init__(self, dir, session_key=None):
-        self.is_part_one = False
+        self.is_part_one = True
         self.last_submission_time = 0
         self.submission_seconds_to_wait = 0
         self.year = 0
@@ -67,6 +67,8 @@ class AocIntegration:
 
     def download_inputs(self):
         if os.path.exists(self.inputs_dir()):
+            sys_display('INFO: AoC inputs directory already configured: {}'.format(self.inputs_dir()))
+            line_break()
             return
 
         sys_display('INFO: making directory: {}'.format(self.inputs_dir()))

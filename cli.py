@@ -1,3 +1,4 @@
+from datetime import datetime
 import os
 from random import choice
 import shutil
@@ -5,14 +6,14 @@ import subprocess
 import sys
 
 from agents.coding_agent import CodingAgent
-# from agents.coding_agent_mock import CodingAgentMock as CodingAgent
 from config import (
     OAI_API_KEY,
     LOCAL_LLM,
     AOC_SESSION_KEY,
 )
 from integrations.aoc import AocIntegration
-from log.logger import (
+from input_output.autocomplete import tab_to_autocomplete_filepaths
+from input_output.input_output import (
     sys_display,
     user_prompt,
     user_prompt_with_options,
@@ -31,6 +32,7 @@ AOC_FNAME = 'solution'
 GOLANG = 'Go'
 PYTHON = 'Python'
 LANGUAGES = [
+    # first language here will be default
     GOLANG,
     PYTHON,
 ]
@@ -68,7 +70,7 @@ Options:
     if not local_model:
         os.environ['OPENAI_API_KEY'] = oai_api_key
 
-    mode = user_prompt_with_options(choice(REACTIONS) + ' Which task?', 'Task', TASKS)
+    mode = user_prompt_with_options('Which task?\n(Type the number. No number results in default of #1)', TASKS)
 
     if mode == AOC and not session_key:
         session_key = os.environ.get('AOC_SESSION_KEY')
@@ -84,7 +86,7 @@ Options:
             aoc_integration = AocIntegration(script_dir + AOC_DIRECTORY, session_key)
             aoc_integration.prompt_puzzle()
             dir = aoc_integration.puzzle_dir()
-            language = user_prompt_with_options("Let's code! Which language?", 'Language', LANGUAGES)
+            language = user_prompt_with_options("Let's code! Which language?", LANGUAGES)
             file = dir + AOC_FNAME + '.' + FILE_EXTENSIONS[language]
             tmp_file = dir + 'tmp-' + AOC_FNAME + '.' + FILE_EXTENSIONS[language]
             aoc_integration.is_part_one = True
@@ -94,7 +96,7 @@ Options:
                 file = user_prompt('Specify filepath (default is "./script.<language-extension>")')
 
                 if file == '':
-                    language = user_prompt_with_options("Let's code! Which language?", 'Language', LANGUAGES)
+                    language = user_prompt_with_options("Let's code! Which language?", LANGUAGES)
                     dir = './'
                     fname = 'script'
                     file = dir + fname + '.' + FILE_EXTENSIONS[language]
@@ -102,6 +104,7 @@ Options:
                     break
 
                 # TODO validate path and convert ~ to actual home
+                # TODO create dirs if needed (after prompting if that's ok)
                 dir = os.path.dirname(os.path.abspath(file)) + '/'
                 base = os.path.basename(file)
                 fname, extension = os.path.splitext(base)
@@ -116,6 +119,9 @@ Options:
                     break
 
                 sys_display('ERROR: extension/language not supported. extension: {}'.format(extension))
+                line_break()
+                # restart outer loop to select valid filepath
+                continue
 
         if os.path.exists(dir):
             sys_display('WARNING: directory already exists: {}'.format(dir))
@@ -146,6 +152,10 @@ Options:
             with open(file, 'r') as f:
                 sys_display('INFO: file exists:\n{}'.format(f.read()))
                 line_break()
+            if mode == AOC:
+                yn = user_prompt_with_options('Have you completed part 1 of this Advent of Code puzzle?', ['no', 'yes'])
+                if yn == 'yes':
+                    aoc_integration.is_part_one = False
             instructions = user_prompt('What should change?')
         else:
             instructions = user_prompt('What should we code?')
@@ -167,7 +177,7 @@ Options:
                     options = ['overwrite', 'abort + retry', 'abort + go to new file']
                 if mode == AOC:
                     options = ['overwrite', 'abort + retry', 'abort + new puzzle/language']
-                action = user_prompt_with_options('What next? Overwriting will replace: {}'.format(file), 'Action', options)
+                action = user_prompt_with_options('What next? Overwriting will replace: {}'.format(file), options)
 
                 if action == 'abort + go to new file' or action == 'abort + new puzzle/language':
                     model.abort_last()
@@ -209,7 +219,7 @@ Options:
                     options = ['run', 'modify', 'start part 2', 'new puzzle/language']
                 else:
                     options = ['run', 'modify', 'new puzzle/language']
-            action = user_prompt_with_options('What next?', 'Action', options)
+            action = user_prompt_with_options('What next?', options)
 
             if action == 'run':
                 if language == GOLANG:
@@ -218,8 +228,11 @@ Options:
                     cmd = ['python', file]
                 else:
                     cmd = ['echo', '"{} does not support \"run\" currently'.format(language)]
-                sys_display('INFO: running code...\n' + ' '.join(cmd))
+                start_time = datetime.now()
+                sys_display('INFO: running code at {}...\n{}'.format(start_time, ' '.join(cmd)))
                 run_result = subprocess.run(cmd, capture_output=True)
+                end_time = datetime.now()
+                sys_display('INFO: finished at {}. elapsed time: {}'.format(end_time, end_time - start_time))
                 print(run_result.stdout.decode())
                 if run_result.returncode != 0:
                     print(run_result.stderr.decode())
@@ -229,7 +242,7 @@ Options:
                         options = ['modify', 'go to new file']
                     if mode == AOC:
                         options = ['modify', 'new puzzle/language']
-                    action = user_prompt_with_options('Bummer, there was an error.', 'Action', options)
+                    action = user_prompt_with_options('Bummer, there was an error.', options)
                 else:
                     if mode == MULTI_FILE:
                         options = ['modify', 'go to new file']
@@ -238,18 +251,18 @@ Options:
                             options = ['modify', 'submit', 'start part 2', 'new puzzle/language']
                         else:
                             options = ['modify', 'submit', 'new puzzle/language']
-                    action = user_prompt_with_options('We can iterate or move on.', 'Action', options)
+                    action = user_prompt_with_options('We can iterate or move on.', options)
 
             while action == 'submit':
                 success = aoc_integration.submit(run_result.stdout.decode())
                 if success:
                     if aoc_integration.is_part_one:
-                        action = user_prompt_with_options('Start part 2?', 'Action', ['yes', 'no, start new puzzle/language'])
+                        action = user_prompt_with_options('Start part 2?', ['yes', 'no, start new puzzle/language'])
                     else:
                         action == 'new puzzle/language'
                 else:
                     options = ['modify', 'submit', 'new puzzle/language']
-                    action = user_prompt_with_options('What do you want to do?', 'Action', options)
+                    action = user_prompt_with_options('What do you want to do?', options)
 
             if 'new puzzle/language' in action or action == 'go to new file':
                 # technically will have a '-' line break above this
@@ -287,4 +300,5 @@ Options:
             instructions = user_prompt('What should change?')
 
 if __name__ == '__main__':
+    tab_to_autocomplete_filepaths()
     main(OAI_API_KEY, LOCAL_LLM, AOC_SESSION_KEY)
