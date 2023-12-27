@@ -1,7 +1,10 @@
-# importing readline allows you to use arrow keys to navigate input()
-# https://stackoverflow.com/a/56275842
-import readline
+import platform
 import shutil
+
+if platform.system().lower() != 'windows':
+    # importing readline allows you to use arrow keys to navigate input() (already possible in Windows powershell)
+    # https://stackoverflow.com/a/56275842
+    import readline
 
 def sys_display(msg):
     print('⛏️  ' + msg)

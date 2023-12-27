@@ -12,8 +12,8 @@ from config import (
     AOC_SESSION_KEY,
 )
 from integrations.aoc import AocIntegration
-from input_output.autocomplete import tab_to_autocomplete_filepaths
-from input_output.input_output import (
+from io_tools.autocomplete import tab_to_autocomplete_filepaths
+from io_tools.printer import (
     sys_display,
     user_prompt,
     user_prompt_with_options,
@@ -22,7 +22,7 @@ from input_output.input_output import (
 
 DEBUG = False
 
-OAI_MODEL = None # 'gpt-3.5-turbo'
+OAI_MODEL = 'gpt-3.5-turbo' # None
 TEMPERATURE = 0.3
 
 # relative base directory for advent of code puzzles
@@ -167,7 +167,9 @@ Options:
                     contents = f.read()
                 sys_display('INFO: rewriting code in a tmp file...')
                 # TODO let chat model know if there was an error?
+                start_time = datetime.now()
                 code = model.revise_solution(instructions, contents)
+                sys_display('INFO: model elapsed time: {} seconds'.format((datetime.now() - start_time).total_seconds()))
                 with open(tmp_file, 'w') as f:
                     f.write(code)
                 sys_display('INFO: wrote code to: {}\n\n{}'.format(tmp_file, code))
@@ -206,14 +208,16 @@ Options:
             else:
                 ## create code
                 sys_display('INFO: creating code...')
+                start_time = datetime.now()
                 code = model.initial_solution(instructions)
+                sys_display('INFO: model elapsed time: {} seconds'.format((datetime.now() - start_time).total_seconds()))
                 with open(file, 'w') as f:
                     f.write(code)
                 sys_display('INFO: wrote code to: {}\n\n{}'.format(file, code))
                 line_break()
 
             if mode == MULTI_FILE:
-                options = ['run', 'go to new file']
+                options = ['run', 'modify', 'go to new file']
             if mode == AOC:
                 if aoc_integration.is_part_one:
                     options = ['run', 'modify', 'start part 2', 'new puzzle/language']
@@ -221,7 +225,7 @@ Options:
                     options = ['run', 'modify', 'new puzzle/language']
             action = user_prompt_with_options('What next?', options)
 
-            if action == 'run':
+            while action == 'run' or action == 'rerun':
                 if language == GOLANG:
                     cmd = ['go', 'run', file]
                 elif language == PYTHON:
@@ -239,18 +243,18 @@ Options:
                     print('exit code: {}'.format(run_result.returncode))
                     line_break()
                     if mode == MULTI_FILE:
-                        options = ['modify', 'go to new file']
+                        options = ['modify', 'rerun', 'go to new file']
                     if mode == AOC:
-                        options = ['modify', 'new puzzle/language']
+                        options = ['modify', 'rerun', 'new puzzle/language']
                     action = user_prompt_with_options('Bummer, there was an error.', options)
                 else:
                     if mode == MULTI_FILE:
-                        options = ['modify', 'go to new file']
+                        options = ['modify', 'rerun', 'go to new file']
                     if mode == AOC:
                         if aoc_integration.is_part_one:
-                            options = ['modify', 'submit', 'start part 2', 'new puzzle/language']
+                            options = ['modify', 'rerun', 'submit', 'start part 2', 'new puzzle/language']
                         else:
-                            options = ['modify', 'submit', 'new puzzle/language']
+                            options = ['modify', 'rerun', 'submit', 'new puzzle/language']
                     action = user_prompt_with_options('We can iterate or move on.', options)
 
             while action == 'submit':

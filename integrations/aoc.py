@@ -4,13 +4,13 @@ import requests
 import string
 import time
 
-from input_output.input_output import (
+from io_tools.printer import (
     line_break,
     sys_display,
     user_prompt
 )
 
-BASE_URL = 'https://adventofcode.com/'
+BASE_URL = 'https://adventofcode.com'
 
 NUMBERS_TO_INT = {
     'one': 1,
@@ -84,31 +84,22 @@ class AocIntegration:
 
         content = text_between(response.text, '<main>', '</main>')
         if content is None:
-            sys_display('WARNING: unable to get main element for test input. url: {}. response: {}'.format(url, response.text))
+            sys_display('WARNING: unable to get main element for test input. url: {}. response: {}'.format(url, content))
             line_break()
             return
 
-        test_inputs = []
-        search_string = 'for example:'
-        for i in range(len(response.text)-len(search_string)):
-            if response.text[i:i+len(search_string)].lower() == search_string:
-                example_start = i+len(search_string)
-                t = text_between(response.text[example_start:], '<code>', '</code>')
-                if t is None:
-                    continue
-                if t[len(t)-1] == '\n':
-                    t = t[:len(t)-1]
-                test_inputs.append(t)
+        # find the first code block
+        t = text_between(content, ':</p>\n<pre><code>', '</code>')
+        if t is None:
+            sys_display('WARNING: unable to locate test input. url: {}. response: {}'.format(url, content))
+        else:
+            if t[len(t)-1] == '\n':
+                t = t[:len(t)-1]
 
-        for i, t in enumerate(test_inputs):
-            file = self.inputs_dir() + 'test-input-{}.txt'.format(i+1)
+            file = self.inputs_dir() + 'test-input.txt'
             with open(file, 'w') as f:
                 f.write(t)
-
-        if len(test_inputs) > 0:
-            sys_display('INFO: successfully download {} test input(s)'.format(len(test_inputs)))
-        else:
-            sys_display('WARNING: unable to find test inputs. url: {}'.format(url))
+            sys_display('INFO: successfully download test input')
 
         if not self.session_key:
             line_break()
