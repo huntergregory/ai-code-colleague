@@ -1,31 +1,30 @@
-# Speech-Driven Coding 🗣️
-Create/iterate on code using natural language. An AI-Human collaboration 🕵️💻✨.
+# Voice IDE 🗣️💻✨
+Free, CLI-based editor to create/iterate on code using natural language.
 
 Built for hands-free, accessible coding via dictation.
 
-## Integrations
-
-### [Advent of Code](https://adventofcode.com): Automated Puzzle-Solving
-Focus on developing solutions instead of logistics & coding minutiae like parsing.
-
-Automates the whole process, so you can dictate everything using the CLI.
+## [Advent of Code](https://adventofcode.com) Integration
+Focus on developing puzzle solutions instead of the logistics & coding minutiae like parsing.
 
 Automates:
+- Creating files/folders.
 - Downloading inputs.
-- Creating files.
 - Running code.
 - Submitting answers.
 
-Note: AI should not be used for AOC submissions impacting leaderboards. For more info, see https://adventofcode.com/about.
+_**Note:**_ AI should not be used for AOC submissions impacting leaderboards. For more info, see https://adventofcode.com/about.
 
 ## Usage
-### Python Dependencies
+Supports OpenAI or a locally run model for privacy.
+
+### Option 1: OpenAI
+#### Python Dependencies
 ```
 python -m pip install langchain
 python -m pip install openai
 ```
 
-### OpenAI API Key
+#### API Key
 First, [create your key](https://platform.openai.com/api-keys).
 
 Then:
@@ -35,14 +34,39 @@ Then:
 OAI_API_KEY=None # replace with string
 ```
 
-OR
+or
 
 - Set an environment variable like:
 ```
 export OAI_API_KEY='<your-key>'
 ```
 
-### Optional: Advent of Code Session Key
+### Option 2: Local Model
+Work in progress.
+
+#### Dependencies
+Install/configure [LLM](https://llm.datasette.io/en/stable/) utility with below commands:
+```
+python -m pip install llm
+llm install llm-gpt4all
+```
+
+Then:
+
+- Modify this line in *config.py*:
+```
+LOCAL_LLM='mistral-7b-openorca' # replace with model name from llm utility
+```
+
+or
+
+- Set an environment variable like:
+```
+export LOCAL_LLM='mistral-7b-openorca'
+```
+
+### Advent of Code
+#### Optional: Advent of Code Session Key
 This allows automation of downloading input and submitting answers.
 
 1. Login to [adventofcode.com](https://adventofcode.com)
@@ -63,3 +87,11 @@ OR
 ```
 export AOC_SESSION_KEY='<your-key>'
 ```
+
+#### Special Notes
+Some AOC submission logic is inspired by [github.com/caderek/aocrunner](https://github.com/caderek/aocrunner). Like aocrunner, this project respects [the concerns of the AoC creator](https://www.reddit.com/r/adventofcode/comments/3v64sb/aoc_is_fragile_please_be_gentle/), and limits unnecessary requests.
+
+The tool:
+- Downloads inputs once (re-download by deleting the input directory).
+- Submits only valid answers (expected format: single number).
+- Prevents resubmissions until the server-specified timeout for incorrect answers.
