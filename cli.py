@@ -144,13 +144,27 @@ Options:
             if mode == AOC:
                 yn = user_prompt_with_options('Have you completed part 1 of this Advent of Code puzzle?', ['no', 'yes'])
                 if yn == 'yes':
+                    part1_file = dir + AOC_FNAME + '-part1.' + FILE_EXTENSIONS[language]
+                    shutil.copy2(src=file, dst=part1_file)
+                    sys_display('INFO: copied {} to {}'.format(file, part1_file))
                     aoc_integration.is_part_one = False
-            instructions = user_prompt('What should change?')
         else:
             instructions = user_prompt('What should we code?')
+            ## create code
+            sys_display('INFO: creating code...')
+            start_time = datetime.now()
+            code = model.initial_solution(instructions, input_file='inputs/input.txt')
+            sys_display('INFO: model elapsed time: {} seconds'.format((datetime.now() - start_time).total_seconds()))
+            with open(file, 'w') as f:
+                f.write(code)
+            sys_display('INFO: wrote code to: {}\n\n{}'.format(file, code))
+            line_break()
+
+        should_rewrite = False
         while True:
             ## inner loop to create the file and iterate on it
-            if os.path.isfile(file):
+            ## file must always exist in this loop
+            if should_rewrite:
                 ## rewrite code
                 with open(file, 'r') as f:
                     contents = f.read()
@@ -194,16 +208,6 @@ Options:
                     line_break()
                 else:
                     raise RuntimeError('unknown action: ' + action)
-            else:
-                ## create code
-                sys_display('INFO: creating code...')
-                start_time = datetime.now()
-                code = model.initial_solution(instructions)
-                sys_display('INFO: model elapsed time: {} seconds'.format((datetime.now() - start_time).total_seconds()))
-                with open(file, 'w') as f:
-                    f.write(code)
-                sys_display('INFO: wrote code to: {}\n\n{}'.format(file, code))
-                line_break()
 
             if mode == MULTI_FILE:
                 options = ['run', 'modify', 'go to new file']
@@ -282,6 +286,8 @@ Options:
             if action == 'yes' or action == 'start part 2':
                 part1_file = dir + AOC_FNAME + '-part1.' + FILE_EXTENSIONS[language]
                 shutil.copy2(src=file, dst=part1_file)
+                sys_display('INFO: copied {} to {}'.format(file, part1_file))
+                line_break()
                 aoc_integration.is_part_one = False
                 # restart inner loop
                 instructions = user_prompt('On to part 2! What should change?')
