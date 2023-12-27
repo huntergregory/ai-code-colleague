@@ -21,6 +21,7 @@ from io_tools.printer import (
 )
 
 DEBUG = False
+VERBOSE_LANGCHAIN = True
 
 OAI_MODEL = 'gpt-3.5-turbo' # None
 TEMPERATURE = 0.3
@@ -40,10 +41,6 @@ FILE_EXTENSIONS = {
     GOLANG: 'go',
     PYTHON: 'py',
 }
-REACTIONS = [
-    'Nice!',
-    'Got it.',
-]
 
 MULTI_FILE = 'create/edit files'
 AOC = 'Advent of Code'
@@ -136,17 +133,9 @@ Options:
         if local_model:
             # TODO
             pass
-        model = CodingAgent(language, FILE_EXTENSIONS[language], model=OAI_MODEL, temperature=TEMPERATURE, debug=DEBUG)
+        model = CodingAgent(language, FILE_EXTENSIONS[language], model=OAI_MODEL, temperature=TEMPERATURE, debug=DEBUG, verbose=VERBOSE_LANGCHAIN)
         sys_display('INFO: using model: {}'.format(model.model_name))
         line_break()
-
-        # TODO git commits
-        # if mode == AOC:
-        #     base = os.path.basename(file)
-        #     commit_name = 'wip: {}'.format(base)
-        # else:
-        #     base = os.path.basename(file)
-        #     commit_name = 'wip: {}'.format(base)
 
         if os.path.isfile(file):
             with open(file, 'r') as f:

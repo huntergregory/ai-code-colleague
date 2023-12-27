@@ -11,7 +11,7 @@ CHAT_MODELS = [
 ]
 
 class CodingAgent:
-    def __init__(self, language, extension, model=None, temperature=0.3, debug=False):
+    def __init__(self, language, extension, model=None, temperature=0.3, debug=False, verbose=True):
         self.instruction_history = []
         self.debug = debug
         if debug:
@@ -34,7 +34,7 @@ FILE:
             llm = OpenAI(model=model, temperature=temperature)
         self.model_name = llm.model_name
         prompt = PromptTemplate(input_variables=['chat_history', 'current_file', 'instructions'], template=template)
-        self.conversation = LLMChain(llm=llm, prompt=prompt, verbose=True)
+        self.conversation = LLMChain(llm=llm, prompt=prompt, verbose=verbose)
 
     def initial_solution(self, instructions):
         return self._run(instructions, '')
