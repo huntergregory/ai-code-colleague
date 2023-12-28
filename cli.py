@@ -133,7 +133,7 @@ Options:
         if local_model:
             # TODO
             pass
-        model = CodingAgent(language, FILE_EXTENSIONS[language], model=OAI_MODEL, temperature=TEMPERATURE, debug=DEBUG, verbose=VERBOSE_LANGCHAIN)
+        model = CodingAgent(language, FILE_EXTENSIONS[language], model=OAI_MODEL, temperature=TEMPERATURE, debug=DEBUG, verbose=VERBOSE_LANGCHAIN, specify_input_file=mode == AOC)
         sys_display('INFO: using model: {}'.format(model.model_name))
         line_break()
 
@@ -153,7 +153,7 @@ Options:
             ## create code
             sys_display('INFO: creating code...')
             start_time = datetime.now()
-            code = model.initial_solution(instructions, input_file='inputs/input.txt')
+            code = model.initial_solution(instructions)
             sys_display('INFO: model elapsed time: {} seconds'.format((datetime.now() - start_time).total_seconds()))
             with open(file, 'w') as f:
                 f.write(code)
@@ -202,7 +202,7 @@ Options:
                     continue
 
                 if action == 'overwrite':
-                    shutil.copy2(dst=file, src=tmp_file)
+                    shutil.copy2(src=tmp_file, dst=file)
                     os.remove(tmp_file)
                     sys_display('INFO: overwrote file and deleted tmp file. file: {}'.format(file))
                     line_break()
@@ -213,16 +213,28 @@ Options:
                 options = ['run', 'modify', 'go to new file']
             if mode == AOC:
                 if aoc_integration.is_part_one:
-                    options = ['run', 'modify', 'start part 2', 'new puzzle/language']
+                    options = ['run (test input)', 'run (real input)', 'modify', 'start part 2', 'new puzzle/language']
                 else:
-                    options = ['run', 'modify', 'new puzzle/language']
+                    options = ['run (test input)', 'run (real input)', 'modify', 'new puzzle/language']
             action = user_prompt_with_options('What next?', options)
 
-            while action == 'run' or action == 'rerun':
+            while 'run' in action:
+                run_file = file
+                if mode == AOC:
+                    target_input = 'test-input.txt'
+                    if 'real input' in action:
+                        target_input = 'input.txt'
+                    replacement = aoc_integration.inputs_dir() + target_input
+                    sys_display('INFO: in tmp file, trying to replace "input.txt" with "{}"'.format(replacement))
+                    with open(file, 'r') as f1:
+                        modified_code = f1.read().replace('input.txt', )
+                        with open(tmp_file, 'w') as f2:
+                            f2.write(modified_code)
+                    run_file = tmp_file
                 if language == GOLANG:
-                    cmd = ['go', 'run', file]
+                    cmd = ['go', 'run', run_file]
                 elif language == PYTHON:
-                    cmd = ['python', file]
+                    cmd = ['python', run_file]
                 else:
                     cmd = ['echo', '"{} does not support \"run\" currently'.format(language)]
                 start_time = datetime.now()
@@ -230,6 +242,8 @@ Options:
                 run_result = subprocess.run(cmd, capture_output=True)
                 end_time = datetime.now()
                 sys_display('INFO: finished at {}. elapsed time: {}'.format(end_time, end_time - start_time))
+                os.remove(tmp_file)
+                sys_display('INFO: tmp file removed'.format(replacement))
                 print(run_result.stdout.decode())
                 if run_result.returncode != 0:
                     print(run_result.stderr.decode())
@@ -238,16 +252,16 @@ Options:
                     if mode == MULTI_FILE:
                         options = ['modify', 'rerun', 'go to new file']
                     if mode == AOC:
-                        options = ['modify', 'rerun', 'new puzzle/language']
+                        options = ['modify', 'rerun (test input)', 'rerun (real input)', 'new puzzle/language']
                     action = user_prompt_with_options('Bummer, there was an error.', options)
                 else:
                     if mode == MULTI_FILE:
                         options = ['modify', 'rerun', 'go to new file']
                     if mode == AOC:
                         if aoc_integration.is_part_one:
-                            options = ['modify', 'rerun', 'submit', 'start part 2', 'new puzzle/language']
+                            options = ['modify', 'rerun (test input)', 'rerun (real input)', 'submit', 'start part 2', 'new puzzle/language']
                         else:
-                            options = ['modify', 'rerun', 'submit', 'new puzzle/language']
+                            options = ['modify', 'rerun (test input)', 'rerun (real input)', 'submit', 'new puzzle/language']
                     action = user_prompt_with_options('We can iterate or move on.', options)
 
             while action == 'submit':

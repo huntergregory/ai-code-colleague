@@ -11,7 +11,7 @@ CHAT_MODELS = [
 ]
 
 class CodingAgent:
-    def __init__(self, language, extension, model=None, temperature=0.3, debug=False, verbose=True):
+    def __init__(self, language, extension, model=None, temperature=0.3, debug=False, verbose=True, specify_input_file=False):
         self.instruction_history = []
         self.debug = debug
         if debug:
@@ -20,7 +20,9 @@ class CodingAgent:
 
         if language.lower() == 'go':
             language = 'Golang'
-        system_msg = 'SYSTEM: Respond with only a main.{} file ({} code). The code should perform the user-specified task.'.format(extension, language)
+
+        input_file_prompt = ' after parsing the input file called "input.txt"' if specify_input_file else ''
+        system_msg = 'SYSTEM: Respond with only a main.{} file ({} code). The code should perform the user-specified task{}.'.format(extension, language, input_file_prompt)
         template = system_msg + """
 {chat_history}{current_file}
 HUMAN: {instructions}
