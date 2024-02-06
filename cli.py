@@ -1,5 +1,6 @@
 from datetime import datetime
 import os
+import platform
 from random import choice
 import shutil
 import subprocess
@@ -27,7 +28,7 @@ OAI_MODEL = 'gpt-3.5-turbo' # None
 TEMPERATURE = 0.3
 
 # relative base directory for advent of code puzzles
-AOC_DIRECTORY = 'aoc/'
+AOC_DIRECTORY = 'puzzles/'
 AOC_FNAME = 'solution'
 
 GOLANG = 'Go'
@@ -75,12 +76,11 @@ Options:
             sys_display('INFO: session key not set. Set this to automate input downloads and submissions (see README)')
             line_break()
 
-    script_dir = os.path.dirname(os.path.abspath(__file__)) + '/'
-
     while True:
         ## outer loop which selects the file/workspace to work on
         if mode == AOC:
-            aoc_integration = AocIntegration(script_dir + AOC_DIRECTORY, session_key)
+            aoc_dir = '{}/{}'.format(os.getcwd(), AOC_DIRECTORY)
+            aoc_integration = AocIntegration(aoc_dir, session_key)
             aoc_integration.prompt_puzzle()
             dir = aoc_integration.puzzle_dir()
             language = user_prompt_with_options("Let's code! Which language?", LANGUAGES)
@@ -164,7 +164,9 @@ Options:
         while True:
             ## inner loop to create the file and iterate on it
             ## file must always exist in this loop
-            if should_rewrite:
+            if not should_rewrite:
+                should_rewrite = True
+            else:
                 ## rewrite code
                 with open(file, 'r') as f:
                     contents = f.read()
@@ -177,12 +179,16 @@ Options:
                     f.write(code)
                 sys_display('INFO: wrote code to: {}\n\n{}'.format(tmp_file, code))
                 line_break()
-
+                if platform.system().lower() != 'windows':
+                    cmd = ['diff', file, tmp_file]
+                    diff_result = subprocess.run(cmd, capture_output=True)
+                    sys_display('INFO: displaying diff\n{}\n{}'.format(' '.join(cmd), diff_result.stdout.decode()))
+                    line_break()
                 if mode == MULTI_FILE:
                     options = ['overwrite', 'abort + retry', 'abort + go to new file']
                 if mode == AOC:
                     options = ['overwrite', 'abort + retry', 'abort + new puzzle/language']
-                action = user_prompt_with_options('What next? Overwriting will replace: {}'.format(file), options)
+                action = user_prompt_with_options('Save changes? Overwriting will replace: {}'.format(file), options)
 
                 if action == 'abort + go to new file' or action == 'abort + new puzzle/language':
                     model.abort_last()
@@ -221,16 +227,18 @@ Options:
             while 'run' in action:
                 run_file = file
                 if mode == AOC:
-                    target_input = 'test-input.txt'
                     if 'real input' in action:
                         target_input = 'input.txt'
+                    else:
+                        target_input = 'test-input.txt'
                     replacement = aoc_integration.inputs_dir() + target_input
                     sys_display('INFO: in tmp file, trying to replace "input.txt" with "{}"'.format(replacement))
                     with open(file, 'r') as f1:
-                        modified_code = f1.read().replace('input.txt', )
+                        modified_code = f1.read().replace('input.txt', replacement)
                         with open(tmp_file, 'w') as f2:
                             f2.write(modified_code)
                     run_file = tmp_file
+
                 if language == GOLANG:
                     cmd = ['go', 'run', run_file]
                 elif language == PYTHON:
@@ -243,8 +251,10 @@ Options:
                 end_time = datetime.now()
                 sys_display('INFO: finished at {}. elapsed time: {}'.format(end_time, end_time - start_time))
                 os.remove(tmp_file)
-                sys_display('INFO: tmp file removed'.format(replacement))
+                sys_display('INFO: tmp file removed')
+                line_break()
                 print(run_result.stdout.decode())
+                # TODO support "undo changes" option here (requires e.g. agent to store previous file(s))
                 if run_result.returncode != 0:
                     print(run_result.stderr.decode())
                     print('exit code: {}'.format(run_result.returncode))
@@ -252,33 +262,43 @@ Options:
                     if mode == MULTI_FILE:
                         options = ['modify', 'rerun', 'go to new file']
                     if mode == AOC:
-                        options = ['modify', 'rerun (test input)', 'rerun (real input)', 'new puzzle/language']
+                        real_text = 'run (real input)'
+                        test_text = 'run (test input)'
+                        if 'real input' in action:
+                            real_text = 're' + real_text
+                        else:
+                            test_text = 're' + test_text
+                        options = ['modify',  real_text, test_text, 'new puzzle/language']
                     action = user_prompt_with_options('Bummer, there was an error.', options)
                 else:
                     if mode == MULTI_FILE:
                         options = ['modify', 'rerun', 'go to new file']
                     if mode == AOC:
-                        if aoc_integration.is_part_one:
-                            options = ['modify', 'rerun (test input)', 'rerun (real input)', 'submit', 'start part 2', 'new puzzle/language']
+                        if 'real input' in action:
+                            options = ['submit (most recently printed text)', 'modify', 'rerun (real input)', 'run (test input)']
                         else:
-                            options = ['modify', 'rerun (test input)', 'rerun (real input)', 'submit', 'new puzzle/language']
-                    action = user_prompt_with_options('We can iterate or move on.', options)
+                            options = ['run (real input)', 'modify', 'rerun (test input)']
+                        if aoc_integration.is_part_one:
+                            options.append('start part 2')
+                        options.append('new puzzle/language')
+                    action = user_prompt_with_options('What next?', options)
 
-            while action == 'submit':
-                success = aoc_integration.submit(run_result.stdout.decode())
+            while action == 'submit (most recently printed text)':
+                last_word = run_result.stdout.decode().strip().split(' ')[-1]
+                success = aoc_integration.submit(last_word)
                 if success:
                     if aoc_integration.is_part_one:
                         action = user_prompt_with_options('Start part 2?', ['yes', 'no, start new puzzle/language'])
                     else:
-                        action == 'new puzzle/language'
+                        action = 'new puzzle/language'
                 else:
-                    options = ['modify', 'submit', 'new puzzle/language']
+                    options = ['modify', 'submit (most recently printed text)', 'new puzzle/language']
                     action = user_prompt_with_options('What do you want to do?', options)
 
             if 'new puzzle/language' in action or action == 'go to new file':
-                # technically will have a '-' line break above this
-                # not worth optimizing to remove that '-' line break
+                # will have a '-' line break above this from user_prompt_with_options
                 line_break(character='=')
+                line_break()
                 # restart outer loop
                 break
 
@@ -303,6 +323,7 @@ Options:
                 sys_display('INFO: copied {} to {}'.format(file, part1_file))
                 line_break()
                 aoc_integration.is_part_one = False
+                sys_display('INFO: puzzle description updated @ {}'.format(aoc_integration.base_url()))
                 # restart inner loop
                 instructions = user_prompt('On to part 2! What should change?')
                 continue

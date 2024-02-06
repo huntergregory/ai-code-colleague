@@ -21,8 +21,10 @@ class CodingAgent:
         if language.lower() == 'go':
             language = 'Golang'
 
-        input_file_prompt = ' after parsing the input file called "input.txt"' if specify_input_file else ''
-        system_msg = 'SYSTEM: Respond with only a main.{} file ({} code). The code should perform the user-specified task{}.'.format(extension, language, input_file_prompt)
+        if specify_input_file:
+            system_msg = 'SYSTEM: The below {} code parses the input file called "input.txt", then performs the user-specified task. Respond with only the main.{} code file.'.format(language, extension)
+        else:
+            system_msg = 'SYSTEM: Respond with only a main.{} file ({} code). The code should perform the user-specified task.'.format(extension, language)
         template = system_msg + """
 {chat_history}{current_file}
 HUMAN: {instructions}

@@ -10,16 +10,20 @@ def sys_display(msg):
     print('⛏️  ' + msg)
 
 def user_prompt(msg):
-    print('💻  ' + msg)
-    result = input('> ')
-    line_break()
-    return result
+    while True:
+        print('💻  ' + msg)
+        result = input('> ').strip()
+        if result == '':
+            sys_display('WARNING: specify input')
+            continue
+        line_break()
+        return result
 
 def user_prompt_with_options(msg, options):
     print('💻  {}'.format(msg))
     for i, o in enumerate(options):
         if i == 0:
-            print('{}) {} (default)'.format(i+1, o))
+            print('{}) {} [default]'.format(i+1, o))
         else:
             print('{}) {}'.format(i+1, o))
     # get user choice
