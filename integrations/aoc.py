@@ -7,10 +7,9 @@ import time
 from io_tools.printer import (
     line_break,
     sys_display,
-    user_prompt
+    user_prompt,
+    user_prompt_with_options
 )
-
-BASE_URL = 'https://adventofcode.com'
 
 NUMBERS_TO_INT = {
     'one': 1,
@@ -57,6 +56,8 @@ class AocIntegration:
 
             self.year = int(info[0])
             self.day = int(info[2])
+            sys_display('INFO: puzzle description @ {}'.format(self.base_url()))
+            line_break()
             return
 
     def puzzle_dir(self):
@@ -65,9 +66,17 @@ class AocIntegration:
     def inputs_dir(self):
         return self.puzzle_dir() + 'inputs/'
 
+    def base_url(self):
+        return 'https://adventofcode.com/{}/day/{}'.format(self.year, self.day)
+
     def download_inputs(self):
         if os.path.exists(self.inputs_dir()):
-            sys_display('INFO: AoC inputs directory already configured: {}'.format(self.inputs_dir()))
+            ls_contents = []
+            for f in os.listdir(self.inputs_dir()):
+                c = self.inputs_dir() + f
+                if os.path.isfile(c):
+                    ls_contents.append(c)
+            sys_display('INFO: AoC inputs directory already configured: {}. Contents:\n{}'.format(self.inputs_dir(), '\n'.join(ls_contents)))
             line_break()
             return
 
@@ -75,7 +84,7 @@ class AocIntegration:
         os.makedirs(self.inputs_dir())
 
         sys_display('INFO: downloading Advent of Code test input...')
-        url = '{}/{}/day/{}'.format(BASE_URL, self.year, self.day)
+        url = self.base_url()
         response = requests.get(url)
         if response.status_code != 200:
             sys_display('WARNING: unable to curl website for test input. url: {}. response code: {}'.format(url, response.status_code))
@@ -88,18 +97,25 @@ class AocIntegration:
             line_break()
             return
 
-        # find the first code block
-        t = text_between(content, ':</p>\n<pre><code>', '</code>')
-        if t is None:
-            sys_display('WARNING: unable to locate test input. url: {}. response: {}'.format(url, content))
-        else:
+        while True:
+            ## get test input
+            t = text_between(content, ':</p>\n<pre><code>', '</code>')
+            if t is None:
+                sys_display('WARNING: unable to locate test input. url: {}. response: {}'.format(url, content))
+                break
+
             if t[len(t)-1] == '\n':
                 t = t[:len(t)-1]
 
+            line_break()
+            yn = user_prompt_with_options('Is this the correct test input?\n{}'.format(t), ['yes', 'no'])
+            if yn == 'no':
+                continue
             file = self.inputs_dir() + 'test-input.txt'
             with open(file, 'w') as f:
                 f.write(t)
-            sys_display('INFO: successfully download test input')
+            sys_display('INFO: successfully downloaded test input to {}'.format(file))
+            break
 
         if not self.session_key:
             line_break()
@@ -122,7 +138,7 @@ class AocIntegration:
         file = self.inputs_dir() + 'input.txt'
         with open(file, 'w') as f:
             f.write(t)
-        sys_display('INFO: successfully download user input')
+        sys_display('INFO: successfully downloaded user input to {}'.format(file))
         line_break()
 
     def submit(self, output):
@@ -152,7 +168,7 @@ class AocIntegration:
 
         part = 1 if self.is_part_one else 2
         body = 'level={}&answer={}'.format(part, output)
-        url = '{}/{}/day/{}/answer'.format(BASE_URL, self.year, self.day)
+        url = '{}/{}/day/{}/answer'.format(self.base_url(), self.year, self.day)
         response = requests.post(url, headers=headers, data=body)
         if response.status_code != 200:
             sys_display('WARNING: failed to submit. url: {}. body: {}. response code: {}'.format(url, body, response.status_code))
