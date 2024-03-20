@@ -256,11 +256,12 @@ Options:
                 print(run_result.stdout.decode())
                 # TODO support "undo changes" option here (requires e.g. agent to store previous file(s))
                 if run_result.returncode != 0:
-                    print(run_result.stderr.decode())
+                    error_output = run_result.stderr.decode()
+                    print(error_output)
                     print('exit code: {}'.format(run_result.returncode))
                     line_break()
                     if mode == MULTI_FILE:
-                        options = ['modify', 'rerun', 'go to new file']
+                        options = ['fix the error', 'modify', 'rerun', 'go to new file']
                     if mode == AOC:
                         real_text = 'run (real input)'
                         test_text = 'run (test input)'
@@ -268,7 +269,7 @@ Options:
                             real_text = 're' + real_text
                         else:
                             test_text = 're' + test_text
-                        options = ['modify',  real_text, test_text, 'new puzzle/language']
+                        options = ['fix the error', 'modify',  real_text, test_text, 'new puzzle/language']
                     action = user_prompt_with_options('Bummer, there was an error.', options)
                 else:
                     if mode == MULTI_FILE:
@@ -326,6 +327,10 @@ Options:
                 sys_display('INFO: puzzle description updated @ {}'.format(aoc_integration.base_url()))
                 # restart inner loop
                 instructions = user_prompt('On to part 2! What should change?')
+                continue
+
+            if action == 'fix the error':
+                instructions = 'fix the error: "{}"'.format(error_output)
                 continue
 
             if action != 'modify':
