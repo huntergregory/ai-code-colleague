@@ -1,9 +1,10 @@
 # AI Code Colleague
 
 Have fun or practice your skills:
-- **Solve puzzles** using dictation (integrated with Advent of Code!).
+- **Solve puzzles** using dictation (***integrated with Advent of Code!***).
 - Describe code at a high-level (like in **interviews/collaboration**).
 
+### Demo
 ![Demo](./images/demo.gif)
 
 ## [Advent of Code](https://adventofcode.com) Integration
