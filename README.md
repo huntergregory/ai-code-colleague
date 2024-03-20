@@ -1,16 +1,18 @@
-# Voice IDE 🗣️💻✨
-Free, CLI-based editor to create/iterate on code using natural language.
+# Code Companion AI
 
-Built for hands-free, accessible coding via dictation.
+Have fun or practice your skills:
+- **Solve puzzles** using dictation (integrated with Advent of Code!).
+- Describe code at a high-level (like in **interviews/collaboration**).
+
+![Demo](./images/demo.gif)
 
 ## [Advent of Code](https://adventofcode.com) Integration
-Focus on developing puzzle solutions instead of the logistics & coding minutiae like parsing.
+Automated puzzle-solving experience:
 
-Automates:
-- Creating files/folders.
-- Downloading inputs.
-- Running code.
-- Submitting answers.
+- Creates files.
+- Downloads inputs.
+- Runs code.
+- Submits answers.
 
 _**Note:**_ AI should not be used for AOC submissions impacting leaderboards. For more info, see https://adventofcode.com/about.
 
@@ -67,7 +69,7 @@ export LOCAL_LLM='mistral-7b-openorca'
 
 ### Advent of Code
 #### Optional: Advent of Code Session Key
-This allows automation of downloading input and submitting answers.
+This allows automation of **downloading input** and **submitting answers**.
 
 1. Login to [adventofcode.com](https://adventofcode.com)
 2. Get your session key from inspecting the webpage:
@@ -93,5 +95,5 @@ Some AOC submission logic is inspired by [github.com/caderek/aocrunner](https://
 
 The tool:
 - Downloads inputs once (re-download by deleting the input directory).
-- Submits only valid answers (expected format: single number).
+- Submits only valid answers (final output, if it's a single number).
 - Prevents resubmissions until the server-specified timeout for incorrect answers.
