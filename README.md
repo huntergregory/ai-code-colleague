@@ -1,4 +1,4 @@
-# Code Companion AI
+# AI Code Colleague
 
 Have fun or practice your skills:
 - **Solve puzzles** using dictation (integrated with Advent of Code!).
