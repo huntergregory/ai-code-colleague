@@ -168,7 +168,7 @@ class AocIntegration:
 
         part = 1 if self.is_part_one else 2
         body = 'level={}&answer={}'.format(part, output)
-        url = '{}/{}/day/{}/answer'.format(self.base_url(), self.year, self.day)
+        url = '{}/answer'.format(self.base_url())
         response = requests.post(url, headers=headers, data=body)
         if response.status_code != 200:
             sys_display('WARNING: failed to submit. url: {}. body: {}. response code: {}'.format(url, body, response.status_code))
@@ -196,11 +196,10 @@ class AocIntegration:
 
         if "That's not the right answer" in content:
             sys_display('INFO: ❌ incorrect solution. Full response:\n{}'.format(content))
-
-        if 'You gave an answer too recently' in content:
+        elif 'You gave an answer too recently' in content:
             sys_display('WARNING: must wait longer to submit again')
         else:
-            sys_display('WARNING: unknown submission response. Full repsonse:\n{}'.format(content))
+            sys_display('WARNING: unknown submission response. Full response:\n{}'.format(content))
 
         time_result = re.findall(r"(one|two|three|four|five|six|seven|eight|nine|ten) (second|minute|hour|day)", content)
         if len(time_result) > 0:
